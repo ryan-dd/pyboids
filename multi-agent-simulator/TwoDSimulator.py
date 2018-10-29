@@ -3,6 +3,7 @@ from numpy import random
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 
+
 NumAgents=10
 WorldDimension = 100
 
@@ -23,17 +24,13 @@ ptr = 0
 def update():
     global points, data, ptr
     p1.clear()
-    #pg.opengl.GLScatterPlotItem()
     points = pg.ScatterPlotItem(x=data[ptr%2][0], y=data[(ptr)%2][1],
                                 pen=pg.mkPen(None), symbolBrush=(255, 255, 255, 120), 
                                 size=1, pxMode=False)
     p1.addItem(points)
     ptr += 1
+    
 timer = QtCore.QTimer()
 timer.timeout.connect(update)
 timer.start(250)
-
-if __name__ == '__main__':
-    import sys
-    if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
-        QtGui.QApplication.instance().exec_()
+QtGui.QApplication.instance().exec_()
