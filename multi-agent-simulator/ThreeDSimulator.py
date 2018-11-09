@@ -23,7 +23,6 @@ window.addItem(scatter_points)
 
 iteration = 0
 def update(): 
-    ## update surface positions and colors
     global scatter_points, positions, iteration
     scatter_points.setData(pos=data[iteration%(len(data))])
     iteration += 1
