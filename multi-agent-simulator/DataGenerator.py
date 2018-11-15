@@ -39,8 +39,8 @@ class DataGenerator:
         self._all_agent_vectors = 2*(random.rand(NumAgents,2)-0.5)
 
         zone_of_repulsion_width = 1
-        zone_of_orientation_width = 3
-        zone_of_attraction_width = 30
+        zone_of_orientation_width = 30
+        zone_of_attraction_width = 1
 
         self._zor_max = zone_of_repulsion_width
         self._zoo_min = self._zor_max
@@ -58,7 +58,7 @@ class DataGenerator:
         # Matrix giving all pairwise distances between agents
         distance_matrix = spatial.distance_matrix(self.all_positions,self.all_positions)
         # Initialize a vector that will contain updated agent orientations
-        updated_agent_vectors = np.zeros((len(self._all_agent_vectors),2))
+        updated_agent_vectors = np.copy(self._all_agent_vectors)
 
         for i, distances_for_agent_i in enumerate(distance_matrix):
             # TODO If neighbors are in blind spot, exclude them from all calculations
@@ -73,7 +73,8 @@ class DataGenerator:
                 # Determine the net direction of repulsion and turn toward it
                 dr = -self._find_d(self.all_positions,repulsion_neighbor_indices,i)
                 agent_vector = np.copy(self._all_agent_vectors[i])
-                self._update_agent_vector(dr,agent_vector)
+                updated_vector = self._update_agent_vector(dr,agent_vector)
+                updated_agent_vectors[i] = updated_vector
             # Otherwise base orientation on attraction and orientation neighbors
             else:
                 use_do = False # True if there are any orientation neighbors
@@ -116,7 +117,6 @@ class DataGenerator:
         if np.abs(angle) < self.theta:
             agent_vector = dfinal
         else:
-            """ It encountered an invalid angle """
             agent_vector = self._rotate(agent_vector,np.sign(angle)*self.theta)
         return agent_vector
 
@@ -146,12 +146,12 @@ class DataGenerator:
     def _find_do(self, vectors, indices):
         # Equation 2 in couzin paper
         agent_vectors = np.take(vectors,indices, axis=0)
-        """It's running into an issue where it's not allowing division"""
+        """invalid value encountered in divide"""
         normalized_vectors = agent_vectors/linalg.norm(agent_vectors)
         return np.sum(normalized_vectors,axis=0)
 
     def _update_positions(self):
-        self.all_positions += self._all_agent_vectors
+        self.all_positions += self._all_agent_vectors*0.1
 
 
 
