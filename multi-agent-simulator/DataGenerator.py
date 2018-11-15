@@ -28,15 +28,15 @@ class DataGenerator:
         return data
 
     def initialize_flock_dynamic_2d(self):
-        NumAgents= 10
+        NumAgents= 200
         WorldDimension = 20
         
         self.all_positions = WorldDimension*(random.rand(NumAgents,2)-0.5)
         self._all_agent_vectors = 2*(random.rand(NumAgents,2)-0.5)
 
-        zone_of_repulsion_width = 2
-        zone_of_orientation_width = 1
-        zone_of_attraction_width = 2
+        zone_of_repulsion_width = 1
+        zone_of_orientation_width = 3
+        zone_of_attraction_width = 30
 
         self._zor_max = zone_of_repulsion_width
         self._zoo_min = self._zor_max
@@ -45,7 +45,7 @@ class DataGenerator:
         self._zoa_max = self._zoa_min+zone_of_attraction_width
 
         # Max angle of rotation for agent
-        self.theta = np.pi/8
+        self.theta = np.pi/4
 
     # TODO add stochastic effect, rotating it by angle taken at random from Gaussian distribution
     # With standard deviation sigma
@@ -64,7 +64,7 @@ class DataGenerator:
             repulsion_neighbor_indices = np.where(repulsion_neighbors)[0]
             if (len(repulsion_neighbor_indices) != 0):
                 dr = -self._find_d(self.all_positions,repulsion_neighbor_indices,i)
-                agent_vector = self._all_agent_vectors[i]
+                agent_vector = np.copy(self._all_agent_vectors[i])
                 self._update_agent_vector(dr,agent_vector)
             else:    
                 use_do = False
@@ -93,7 +93,7 @@ class DataGenerator:
                 if np.array_equal(dfinal, [0,0]):
                     updated_agent_vectors[i] = self._all_agent_vectors[i]
                 else:
-                    agent_vector = self._all_agent_vectors[i]
+                    agent_vector = np.copy(self._all_agent_vectors[i])
                     updated_agent_vector = self._update_agent_vector(dfinal,agent_vector)
                     updated_agent_vectors[i] = updated_agent_vector
         self._all_agent_vectors = updated_agent_vectors
@@ -109,8 +109,9 @@ class DataGenerator:
             agent_vector = self._rotate(agent_vector,np.sign(angle)*self.theta)
         return agent_vector
 
-    def _angle_between(self, v1, v2):
-        return np.arccos(np.clip(np.dot(v1, v2), -1.0, 1.0))
+    def _angle_between(self, A, B):
+        #return np.arccos(np.clip(np.dot(v1, v2), -1.0, 1.0))
+        return np.arccos(A.dot(B)/(np.linalg.norm(A)*np.linalg.norm(B)))
     
     def _rotate(self, vector, theta):
         c, s = np.cos(theta), np.sin(theta)
@@ -124,9 +125,9 @@ class DataGenerator:
         # Calulate Vectors of agent to all other agents
         rij = agents - position[i]
         # Normalize everything
-        vectors = (rij)/linalg.norm(rij)
+        rij_normalized = (rij)/linalg.norm(rij)
         # Normalize it again? not sure about this one.
-        normalized_vectors = vectors/linalg.norm(vectors)
+        normalized_vectors = rij_normalized/linalg.norm(rij_normalized)
         return np.sum(normalized_vectors,axis=0)
 
     def _find_do(self, vectors, indices):
@@ -142,6 +143,6 @@ class DataGenerator:
        
 if __name__ == '__main__':
     generator = DataGenerator()
-    generator.initialize_flock_dynamic()
-    generator.update_flock()
-    generator.update_flock()
+    generator.initialize_flock_dynamic_2d()
+    generator.update_flock_2d()
+    generator.update_flock_2d()
