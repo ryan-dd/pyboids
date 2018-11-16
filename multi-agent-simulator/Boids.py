@@ -10,18 +10,20 @@ class Boids:
         pass
 
     def initialize_boids(self):
-        NumAgents= 150
+        NumAgents= 100
         WorldDimension = 100
 
         self.all_positions = WorldDimension*(random.rand(NumAgents,2)-0.5)
         
         self._boid_velocities = np.ones((NumAgents,2))*-1
-        #(random.rand(NumAgents,2)-0.5)
+        #self._boid_velocities = (random.rand(NumAgents,2)-0.5)
         self._boid_velocities = preprocessing.normalize(self._boid_velocities, norm='l2')
 
-        zone_of_repulsion_width = 20
-        zone_of_orientation_width = 10
-        zone_of_attraction_width = 50
+        zone_of_repulsion_width = 0.5
+        zone_of_orientation_width = 3
+        zone_of_attraction_width = 200
+        self.tau = 1
+        self.limit_angle = np.pi/4*self.tau
 
         self._zor_max = zone_of_repulsion_width
         self._zoo_min = self._zor_max
@@ -29,8 +31,7 @@ class Boids:
         self._zoa_min = self._zoo_max
         self._zoa_max = self._zoa_min+zone_of_attraction_width
 
-        self.tau = 1
-        self.limit_angle = np.pi/8
+        
         
     def update_boids(self):
         # Matrix giving all pairwise distances between agents
@@ -53,14 +54,14 @@ class Boids:
             
             vfinal = np.add(v1, v2)
             vfinal = np.add(vfinal,v3)
-            jitter = (random.rand(1,2)-0.5)*0
+            jitter = (random.rand(1,2)-0.5)*20
             vfinal = np.add(vfinal,jitter)
             vfinal = preprocessing.normalize(vfinal, norm='l2')
             vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i])
             new_velocity[i] = vfinal
         
         normalize_new_velocity = preprocessing.normalize(new_velocity, norm='l2')      
-        self.all_positions += normalize_new_velocity
+        self.all_positions += normalize_new_velocity*self.tau
         self._boid_velocities = normalize_new_velocity
         return self.all_positions
 
@@ -113,6 +114,7 @@ class Boids:
     def _repulsion_rule(self, boid_position, distances,i):
         repulsion_neighbors = np.where((distances <= self._zor_max),1,0)
         repulsion_neighbors_indices = np.where(repulsion_neighbors)[0]
+        repulsion_neighbors[i] = False
         if (len(repulsion_neighbors_indices) != 0):
             repulsion_neighbors = np.take(self.all_positions, repulsion_neighbors_indices, axis=0)
             center_of_mass = np.mean(repulsion_neighbors,axis=0)
@@ -126,7 +128,7 @@ class Boids:
         on_indices = np.where(orientation_neighbors)[0]
         if (len(on_indices) != 0):
             orientation_neighbors = np.take(self._boid_velocities,on_indices, axis=0)
-            average_velocity = np.mean(orientation_neighbors,axis=0)
+            average_velocity = np.sum(orientation_neighbors,axis=0)
             return average_velocity
         else:
             return [0,0]
