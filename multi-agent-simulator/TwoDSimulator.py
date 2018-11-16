@@ -3,6 +3,7 @@ from numpy import random
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
 from DataGenerator import DataGenerator
+from Boids import Boids
 
 # NumAgents=10
 # WorldDimension = 100
@@ -11,8 +12,8 @@ from DataGenerator import DataGenerator
 # agent_coordinates2 = WorldDimension*(random.rand(2,NumAgents)-0.5)
 # coordinates = [agent_coordinates1, agent_coordinates2]
 
-generator = DataGenerator()
-generator.initialize_flock_dynamic_2d()
+generator = Boids()
+generator.initialize_boids()
 
 pg.setConfigOptions(antialias=True)
 app = QtGui.QApplication([])
@@ -27,7 +28,7 @@ ptr = 0
 def update():
     global points, data, ptr
     p1.clear()
-    data = generator.update_flock_2d()
+    data = generator.update_boids()
     points = pg.ScatterPlotItem(x=data[:,0], y=data[:,1],
                                 pen=pg.mkPen(None), symbolBrush=(255, 255, 255, 120), 
                                 size=1, pxMode=False)
@@ -36,5 +37,5 @@ def update():
 
 timer = QtCore.QTimer()
 timer.timeout.connect(update)
-timer.start(100)
+timer.start(0)
 QtGui.QApplication.instance().exec_()
