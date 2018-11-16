@@ -10,8 +10,8 @@ class Boids:
         pass
 
     def initialize_boids(self):
-        NumAgents= 300
-        WorldDimension = 200
+        NumAgents= 150
+        WorldDimension = 100
 
         self.all_positions = WorldDimension*(random.rand(NumAgents,2)-0.5)
         
@@ -19,9 +19,9 @@ class Boids:
         #(random.rand(NumAgents,2)-0.5)
         self._boid_velocities = preprocessing.normalize(self._boid_velocities, norm='l2')
 
-        zone_of_repulsion_width = 10
+        zone_of_repulsion_width = 20
         zone_of_orientation_width = 10
-        zone_of_attraction_width = 30
+        zone_of_attraction_width = 50
 
         self._zor_max = zone_of_repulsion_width
         self._zoo_min = self._zor_max
@@ -30,7 +30,7 @@ class Boids:
         self._zoa_max = self._zoa_min+zone_of_attraction_width
 
         self.tau = 1
-        self.limit_angle = np.pi/4*0.001
+        self.limit_angle = np.pi/8
         
     def update_boids(self):
         # Matrix giving all pairwise distances between agents
@@ -49,14 +49,14 @@ class Boids:
             v3 = self._orientation_rule(boid_position,distances)
             v1 = np.multiply(self.tau,v1)
             v2 = np.multiply(self.tau,v2)
-            v3 = np.multiply(self.tau*40,v3)
+            v3 = np.multiply(self.tau,v3)
             
             vfinal = np.add(v1, v2)
             vfinal = np.add(vfinal,v3)
-            jitter = (random.rand(1,2)-0.5)*10
+            jitter = (random.rand(1,2)-0.5)*0
             vfinal = np.add(vfinal,jitter)
-            #vfinal = preprocessing.normalize(vfinal, norm='l2')
-            #vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i])
+            vfinal = preprocessing.normalize(vfinal, norm='l2')
+            vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i])
             new_velocity[i] = vfinal
         
         normalize_new_velocity = preprocessing.normalize(new_velocity, norm='l2')      
@@ -89,7 +89,7 @@ class Boids:
 
     def _rotate(self, vector, theta):
         c, s = np.cos(theta), np.sin(theta)
-        R = np.array(((c,-s), (s, c)))
+        R = np.array([[c,-s], [s, c]])
         return (R.dot(vector))
 
     def _find_ignore_neighbors(self, boid_position, i):
@@ -131,19 +131,42 @@ class Boids:
         else:
             return [0,0]
 
+    def _test_rotate(self):
+        angle = np.pi/4
+        vector = (1,0)
+        rotated_vector = self._rotate(vector,angle)
+        print(rotated_vector)
+
+    def _test_compliment(self):
+        ang = 6
+        smallest_compliment = self._get_smaller_complement(ang)
+        print(smallest_compliment)
+        print(ang+smallest_compliment)
+
+    def _test_limit(self):
+        v1 = [0,1]
+        v2 = [-1,0]
+        #vfinal, vagenti
+        v1limited = self._limit_vector(v1, v2)
+        print(v1limited)
+
+
 
 if __name__ == '__main__':
     boids = Boids()
     boids.initialize_boids()
-    vfinal = np.array([0.0,-1.0])
-    voriginal = np.array([1.0,0.0])
- 
-    angle = boids._angle_between(vfinal,voriginal)
-    angle_final = boids._get_smaller_complement(angle)
-    
-    boids._limit_vector(vfinal, voriginal)
+    # boids._test_compliment()
+    boids._test_limit()
 
-    vfinal = np.array([[0.0,-1.0]])
-    voriginal = np.array([[1.0,0.0]])
-    boids._limit_vector(vfinal, voriginal)
+    # vfinal = np.array([0.0,-1.0])
+    # voriginal = np.array([1.0,0.0])
+ 
+    # angle = boids._angle_between(vfinal,voriginal)
+    # angle_final = boids._get_smaller_complement(angle)
+    
+    # boids._limit_vector(vfinal, voriginal)
+
+    # vfinal = np.array([[0.0,-1.0]])
+    # voriginal = np.array([[1.0,0.0]])
+    # boids._limit_vector(vfinal, voriginal)
 
