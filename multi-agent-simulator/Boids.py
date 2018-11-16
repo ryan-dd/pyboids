@@ -11,17 +11,17 @@ class Boids:
 
     def initialize_boids(self):
         NumAgents= 300
-        WorldDimension = 150
+        WorldDimension = 200
 
         self.all_positions = WorldDimension*(random.rand(NumAgents,2)-0.5)
         
-        self._boid_velocities = np.ones((NumAgents,2))
-        
+        self._boid_velocities = np.ones((NumAgents,2))*-1
+        #(random.rand(NumAgents,2)-0.5)
         self._boid_velocities = preprocessing.normalize(self._boid_velocities, norm='l2')
 
-        zone_of_repulsion_width = 5
-        zone_of_orientation_width = 5
-        zone_of_attraction_width = 5
+        zone_of_repulsion_width = 10
+        zone_of_orientation_width = 10
+        zone_of_attraction_width = 30
 
         self._zor_max = zone_of_repulsion_width
         self._zoo_min = self._zor_max
@@ -30,34 +30,74 @@ class Boids:
         self._zoa_max = self._zoa_min+zone_of_attraction_width
 
         self.tau = 1
+        self.limit_angle = np.pi/4*0.001
         
-    # TODO add stochastic effect, rotating it by angle taken at random from Gaussian distribution
-    # With standard deviation sigma
-
     def update_boids(self):
+        # Matrix giving all pairwise distances between agents
         all_distances = spatial.distance_matrix(self.all_positions,self.all_positions)
+        # Initialize a vector that will contain updated agent orientations
         new_velocity = np.copy(self._boid_velocities)
 
         for i, boid_position in enumerate(self.all_positions):
+            # Update velocity for agent i
             distances = all_distances[i,:]
+
+            agents_to_ignore = self._find_ignore_neighbors(boid_position,i)
+
             v1 = self._attraction_rule(boid_position,distances)
             v2 = self._repulsion_rule(boid_position,distances,i)
             v3 = self._orientation_rule(boid_position,distances)
             v1 = np.multiply(self.tau,v1)
             v2 = np.multiply(self.tau,v2)
-            v3 = np.multiply(self.tau*30,v3)
+            v3 = np.multiply(self.tau*40,v3)
             
             vfinal = np.add(v1, v2)
             vfinal = np.add(vfinal,v3)
-            jitter = random.rand(1,2)*10
-            vfinal = np.add(vfinal,jitter) 
+            jitter = (random.rand(1,2)-0.5)*10
+            vfinal = np.add(vfinal,jitter)
+            #vfinal = preprocessing.normalize(vfinal, norm='l2')
+            #vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i])
             new_velocity[i] = vfinal
         
-        normalize_new_velocity = new_velocity
-        normalize_new_velocity = preprocessing.normalize(new_velocity, norm='l2')        
+        normalize_new_velocity = preprocessing.normalize(new_velocity, norm='l2')      
         self.all_positions += normalize_new_velocity
         self._boid_velocities = normalize_new_velocity
         return self.all_positions
+
+    def _limit_vector(self, vfinal, v_agent_i):
+        angle = self._angle_between(vfinal,v_agent_i)
+        angle = self._get_smaller_complement(angle)
+        if np.abs(angle) < self.limit_angle:
+            return vfinal
+        else:
+            return self._rotate(v_agent_i,np.sign(angle)*self.limit_angle)
+
+    def _get_smaller_complement(self, angle):
+        if angle >= 0:
+            angle2 = 2*np.pi - angle
+        else:
+            angle2 = 2*np.pi + angle
+        if (abs(angle) < abs(angle2)):
+            return angle
+        else:
+            return angle2
+
+    def _angle_between(self,vfinal,voriginal):
+        # Returns a value between [-pi, pi] of the angle from A to B
+        angle = np.arctan2(vfinal[1],vfinal[0]) - np.arctan2(voriginal[1],voriginal[0])
+        return angle
+
+    def _rotate(self, vector, theta):
+        c, s = np.cos(theta), np.sin(theta)
+        R = np.array(((c,-s), (s, c)))
+        return (R.dot(vector))
+
+    def _find_ignore_neighbors(self, boid_position, i):
+        other_agent_vectors = preprocessing.normalize(self.all_positions - boid_position, norm='l2')
+        angles = np.dot(other_agent_vectors,self._boid_velocities[i])
+        angle_constant = 0.9
+        ignore_neighbor_indices = np.where((angles < angle_constant) & (angles > -angle_constant),1,0)
+        pass
 
     def _attraction_rule(self, boid_position, distances):
         attraction_neighbors = np.where((distances > self._zoa_min) & (distances <= self._zoa_max),1,0)
@@ -95,6 +135,15 @@ class Boids:
 if __name__ == '__main__':
     boids = Boids()
     boids.initialize_boids()
-    boids.update_boids()
-    boids.update_boids()
+    vfinal = np.array([0.0,-1.0])
+    voriginal = np.array([1.0,0.0])
+ 
+    angle = boids._angle_between(vfinal,voriginal)
+    angle_final = boids._get_smaller_complement(angle)
+    
+    boids._limit_vector(vfinal, voriginal)
+
+    vfinal = np.array([[0.0,-1.0]])
+    voriginal = np.array([[1.0,0.0]])
+    boids._limit_vector(vfinal, voriginal)
 
