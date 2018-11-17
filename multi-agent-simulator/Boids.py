@@ -5,7 +5,7 @@ from scipy import spatial
 from sklearn import preprocessing
 
 class Boids:
-    
+
     def __init__(self):
         pass
 
@@ -13,17 +13,21 @@ class Boids:
         NumAgents= 200
         WorldDimension = 12
 
+        # NumAgents x 2 matrix to hold all x and y positions of agents, which
+        # are initialized between -WorldDimension/2 and WorldDimension/2
         self.all_positions = WorldDimension*(random.rand(NumAgents,2)-0.5)
-        
+
+        # Velocity in x and y, replacing the old orientation matrix
         self._boid_velocities = np.ones((NumAgents,2))*-1
         #self._boid_velocities = (random.rand(NumAgents,2)-0.5)
+        # Normalize the velocity vectors using least squares normalization
         self._boid_velocities = preprocessing.normalize(self._boid_velocities, norm='l2')
 
         zone_of_repulsion_width = 1
         zone_of_orientation_width = 0.1
         zone_of_attraction_width = 5
-        self.tau = 1
-        self.limit_angle = np.pi/4
+        self.tau = 1 # time step
+        self.limit_angle = np.pi/4 # maximum turn angle
 
         self._zor_max = zone_of_repulsion_width
         self._zoo_min = self._zor_max
@@ -31,8 +35,8 @@ class Boids:
         self._zoa_min = self._zoo_max
         self._zoa_max = self._zoa_min+zone_of_attraction_width
 
-        
-        
+
+
     def update_boids(self):
         # Matrix giving all pairwise distances between agents
         all_distances = spatial.distance_matrix(self.all_positions,self.all_positions)
@@ -43,31 +47,36 @@ class Boids:
             # Update velocity for agent i
             distances = all_distances[i,:]
 
+            # This appears to be unused
             agents_to_ignore = self._find_ignore_neighbors(boid_position,i)
 
+            # Find velocity vectors for each of the formation rules
             v1 = self._attraction_rule(boid_position,distances)
             v2 = self._repulsion_rule(boid_position,distances,i)
             v3 = self._orientation_rule(boid_position,distances)
+            # Scale all velocities by the time step
             v1 = np.multiply(self.tau,v1)
             v2 = np.multiply(self.tau,v2)
             v3 = np.multiply(self.tau,v3)
-            
+
+            # Find the total resultant velocity vector
             vfinal = np.add(v1, v2)
             vfinal = np.add(vfinal,v3)
-            jitter = (random.rand(1,2)-0.5)
+            jitter = (random.rand(1,2)-0.5) # between 0.5 and 1.5
             vfinal = np.add(vfinal,jitter)
             vfinal = preprocessing.normalize(vfinal, norm='l2')
             vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i])
             new_velocity[i] = vfinal
-        
-        normalize_new_velocity = preprocessing.normalize(new_velocity, norm='l2')      
-        self.all_positions += normalize_new_velocity*self.tau
-        self._boid_velocities = normalize_new_velocity
+
+        normalize_new_velocity = preprocessing.normalize(new_velocity, norm='l2')
+        self.all_positions += normalize_new_velocity*self.tau # update positions
+        self._boid_velocities = normalize_new_velocity # Store velocities for next iteration
         return self.all_positions
 
     def _limit_vector(self, vfinal, v_agent_i):
-        angle = self._angle_between(vfinal,v_agent_i)
-        angle = self._get_smaller_complement(angle)
+        angle = self._angle_between(vfinal,v_agent_i) # Included angle of velocity vectors
+        angle = self._get_smaller_complement(angle) # Normalizes angle to [-pi, pi]
+        # Limit the turn by the minimum turn angle
         if np.abs(angle) < self.limit_angle:
             return vfinal
         else:
@@ -84,7 +93,7 @@ class Boids:
             return angle2
 
     def _angle_between(self,vfinal,voriginal):
-        # Returns a value between [-pi, pi] of the angle from A to B
+        # Returns a value between [-2pi, 2pi] of the angle from voriginal to vfinal
         angle = np.arctan2(vfinal[1],vfinal[0]) - np.arctan2(voriginal[1],voriginal[0])
         return angle
 
@@ -163,13 +172,12 @@ if __name__ == '__main__':
 
     # vfinal = np.array([0.0,-1.0])
     # voriginal = np.array([1.0,0.0])
- 
+
     # angle = boids._angle_between(vfinal,voriginal)
     # angle_final = boids._get_smaller_complement(angle)
-    
+
     # boids._limit_vector(vfinal, voriginal)
 
     # vfinal = np.array([[0.0,-1.0]])
     # voriginal = np.array([[1.0,0.0]])
     # boids._limit_vector(vfinal, voriginal)
-
