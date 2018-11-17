@@ -1,0 +1,80 @@
+\documentclass[12pt]{article}
+
+\begin{document}
+
+\section*{Nearest Neighbors}
+
+\subsection*{Swarm}
+
+For the model in the paper, the following parameters produced a swarm.
+
+\begin{itemize}
+  \item{Zone of Repulsion: 1}
+  \item{Zone of Orientation: .1}
+  \item{Zone of Attraction: 10}
+  \item{Tau: 4}
+  \item{Limit Angle: $\pi$}
+\end{itemize}
+
+Directly applying these results with the 5 nearest neighbors produced an interesting dynamic. Very quickly 
+all the points except one or two would colapse very close to each other. Then this cluster and the small point would 
+move around keeping a fixed distance and oscilating back and forth.
+
+By reducing tau to 1 I was able to recreat a swarm. The difference is that most the area of the swarm was smaller
+and there were also 4 or 5 points that were farther away interacting.
+
+\subsection*{Torus}
+
+For the model in the paper, the following parameters produced a torus.
+
+\begin{itemize}
+  \item{Zone of Repulsion: 1}
+  \item{Zone of Orientation: .1}
+  \item{Zone of Attraction: 5}
+  \item{Tau: 1}
+  \item{Limit Angle: $\pi / 4$}
+\end{itemize}
+
+With these settings the NN approach is interesting. There forms one main group that moves around like a swarm. 
+The rest are swarming fairly uniformally over a loarge area. The small number of agents they exchange information with 
+has swarm techniques at a much broader scale. When the big cluster approaches these some agents join and some leave. Overall
+the same effect is maintained.
+
+This was the hardest to get to match the results. In the end I was able to get a noisy torus. There would be a clear torus 
+and then it would colapse and reform. To do this I removed the limit angle.
+
+ 
+\subsection*{Highly Parallel Group}
+
+For the model in the paper, the following parameters produced a highly parallel group.
+
+\begin{itemize}
+  \item{Zone of Repulsion: 1}
+  \item{Zone of Orientation: 15}
+  \item{Zone of Attraction: 15}
+  \item{Tau: 1}
+  \item{Limit Angle: $\pi / 4$}
+\end{itemize}
+
+These parameters also produce the same general effect with nearest neighbors. The only difference is sometimes
+there is a little more variance and sensitivity to noise.
+
+\subsection*{Dynamic Parallel Group}
+
+For the model in the paper, the following parameters produced a dynamic parallel group.
+
+\begin{itemize}
+  \item{Zone of Repulsion: 1}
+  \item{Zone of Orientation: 5}
+  \item{Zone of Attraction: 15}
+  \item{Tau: 1}
+  \item{Limit Angle: $\pi / 4$}
+\end{itemize}
+
+When using these parameters it started off very similar to the highly parallel group. The points moved very quickly as a flock
+together maintaining realativly the same formation. What was interesting here was that as time went on the stability of the
+group began to falter. Some of the points slowly got further away unitl were behaving differntly from the group. As this happend 
+the circle that was typical began to deform into a streched elipse.
+ 
+\end{document} 
+  
