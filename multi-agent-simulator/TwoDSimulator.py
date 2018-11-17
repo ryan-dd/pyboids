@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import eigvals, eigvalsh
 from numpy import random
 from pyqtgraph.Qt import QtGui, QtCore
 import pyqtgraph as pg
@@ -21,18 +22,33 @@ mw = QtGui.QMainWindow()
 win = pg.GraphicsWindow(title='Simulation environment')
 win.resize(800,800)
 
-p1 = win.addPlot()
-p1.setRange(xRange=[-50,50],yRange=[-50,50])
+# p1 = win.addPlot()
+l = pg.GraphicsLayout()
+win.setCentralItem(l)
+p1 = l.addPlot(1, 1, colspan=3, rowspan=3)
+p2 = l.addPlot(4,1)
+p3 = l.addPlot(4,2)
+p4 = l.addPlot(4,3)
+# p1.setRange(xRange=[-20,20],yRange=[-20,20])
+# p1.
 data = generator.all_positions
+p2pp = []
 ptr = 0
 def update():
     global points, data, ptr
-    p1.clear()
     data = generator.update_boids()
-    points = pg.ScatterPlotItem(x=data[:,0], y=data[:,1],
-                                pen=pg.mkPen(None), symbolBrush=(255, 255, 255, 120), 
-                                size=0.1, pxMode=False)
-    p1.addItem(points)
+
+    p1.clear()
+    p2.clear()
+    p3.clear()
+    p4.clear()
+    p1.scatterPlot(x=data[:,0], y=data[:,1],
+                                pen=pg.mkPen(None), symbolBrush=(255, 255, 255, 205),
+                                size=0.05, pxMode=False)
+    p2.plot(generator.fevr)
+    p3.plot(generator.fevo)
+    p4.plot(generator.feva)
+    # p1.addItem(l)
     ptr += 1
 
 timer = QtCore.QTimer()

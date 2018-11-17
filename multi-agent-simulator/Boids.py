@@ -1,6 +1,7 @@
 from scipy.spatial import distance
 import numpy as np
 from numpy import random
+from numpy.linalg import eigvals, eigvalsh
 from scipy import spatial
 from sklearn import preprocessing
 
@@ -10,7 +11,8 @@ class Boids:
         pass
 
     def initialize_boids(self):
-        NumAgents= 200
+        NumAgents= 100
+        self.NumAgents = NumAgents
         WorldDimension = 12
 
         self.all_positions = WorldDimension*(random.rand(NumAgents,2)-0.5)
@@ -20,7 +22,7 @@ class Boids:
         self._boid_velocities = preprocessing.normalize(self._boid_velocities, norm='l2')
 
         zone_of_repulsion_width = 1
-        zone_of_orientation_width = 0.1
+        zone_of_orientation_width = 0.0001
         zone_of_attraction_width = 5
         self.tau = 1
         self.limit_angle = np.pi/4
@@ -31,6 +33,14 @@ class Boids:
         self._zoa_min = self._zoo_max
         self._zoa_max = self._zoa_min+zone_of_attraction_width
 
+        self._adj_r = np.zeros((NumAgents, NumAgents))
+        self._adj_o = np.zeros((NumAgents, NumAgents))
+        self._adj_a = np.zeros((NumAgents, NumAgents))
+
+        self.fevr = []
+        self.fevo = []
+        self.feva = []
+
         
         
     def update_boids(self):
@@ -39,15 +49,19 @@ class Boids:
         # Initialize a vector that will contain updated agent orientations
         new_velocity = np.copy(self._boid_velocities)
 
+        self._adj_r = np.zeros((self.NumAgents, self.NumAgents))
+        self._adj_o = np.zeros((self.NumAgents, self.NumAgents))
+        self._adj_a = np.zeros((self.NumAgents, self.NumAgents))
+
         for i, boid_position in enumerate(self.all_positions):
             # Update velocity for agent i
             distances = all_distances[i,:]
 
             agents_to_ignore = self._find_ignore_neighbors(boid_position,i)
 
-            v1 = self._attraction_rule(boid_position,distances)
+            v1 = self._attraction_rule(boid_position,distances, i)
             v2 = self._repulsion_rule(boid_position,distances,i)
-            v3 = self._orientation_rule(boid_position,distances)
+            v3 = self._orientation_rule(boid_position,distances, i)
             v1 = np.multiply(self.tau,v1)
             v2 = np.multiply(self.tau,v2)
             v3 = np.multiply(self.tau,v3)
@@ -63,6 +77,12 @@ class Boids:
         normalize_new_velocity = preprocessing.normalize(new_velocity, norm='l2')      
         self.all_positions += normalize_new_velocity*self.tau
         self._boid_velocities = normalize_new_velocity
+
+        np.fill_diagonal(self._adj_r, 0)
+        self.feva.append(fiedler_eigenvalue(self._adj_a))
+        self.fevo.append(fiedler_eigenvalue(self._adj_o))
+        self.fevr.append(fiedler_eigenvalue(self._adj_r))
+
         return self.all_positions
 
     def _limit_vector(self, vfinal, v_agent_i):
@@ -100,9 +120,11 @@ class Boids:
         ignore_neighbor_indices = np.where((angles < angle_constant) & (angles > -angle_constant),1,0)
         pass
 
-    def _attraction_rule(self, boid_position, distances):
+    def _attraction_rule(self, boid_position, distances, i):
         attraction_neighbors = np.where((distances > self._zoa_min) & (distances <= self._zoa_max),1,0)
         attraction_neighbors_indices = np.where(attraction_neighbors)[0]
+        self._adj_a[i, attraction_neighbors_indices] = -1
+        self._adj_a[attraction_neighbors_indices, i] = -1
         if (len(attraction_neighbors_indices) != 0):
             attraction_neighbors = np.take(self.all_positions, attraction_neighbors_indices, axis=0)
             #attraction_neighbors = preprocessing.normalize(attraction_neighbors)
@@ -116,6 +138,8 @@ class Boids:
         repulsion_neighbors = np.where((distances <= self._zor_max),1,0)
         repulsion_neighbors_indices = np.where(repulsion_neighbors)[0]
         repulsion_neighbors[i] = False
+        self._adj_r[i, repulsion_neighbors_indices] = -1
+        self._adj_r[repulsion_neighbors_indices, i] = -1
         if (len(repulsion_neighbors_indices) != 0):
             repulsion_neighbors = np.take(self.all_positions, repulsion_neighbors_indices, axis=0)
             center_of_mass = np.mean(repulsion_neighbors,axis=0)
@@ -124,9 +148,11 @@ class Boids:
         else:
             return [0,0]
 
-    def _orientation_rule(self, boid_position, distances):
+    def _orientation_rule(self, boid_position, distances, i):
         orientation_neighbors = np.where((distances > self._zoo_min) & (distances <= self._zoo_max),1,0)
         on_indices = np.where(orientation_neighbors)[0]
+        self._adj_o[i, on_indices] = -1
+        self._adj_o[on_indices, i] = -1
         if (len(on_indices) != 0):
             orientation_neighbors = np.take(self._boid_velocities,on_indices, axis=0)
             average_velocity = np.mean(orientation_neighbors,axis=0)
@@ -153,14 +179,25 @@ class Boids:
         v1limited = self._limit_vector(v1, v2)
         print(v1limited)
 
+def fiedler_eigenvalue(adjmat):
+    degree = np.sum(adjmat, axis=0)
+    np.fill_diagonal(adjmat, -degree)
+    eigenvals = eigvals(adjmat)
+    eigenvals = eigenvals[np.argsort(eigenvals)]
+    fiedler_eigenvalue = eigenvals[1]
+    # print(fiedler_eigenvalue)
+    # if np.iscomplex(fiedler_eigenvalue):
+    #     print("AHHHH it's complex", fiedler_eigenvalue)
+    return np.real(fiedler_eigenvalue)
+
 
 
 if __name__ == '__main__':
     boids = Boids()
     boids.initialize_boids()
     # boids._test_compliment()
-    boids._test_limit()
-
+    # boids._test_limit()
+    fiedler_eigenvalue(np.reshape(np.random.rand(100), (10,10)))
     # vfinal = np.array([0.0,-1.0])
     # voriginal = np.array([1.0,0.0])
  
