@@ -31,7 +31,7 @@ def update():
     data = generator.update_boids()
     points = pg.ScatterPlotItem(x=data[:,0], y=data[:,1],
                                 pen=pg.mkPen(None), symbolBrush=(255, 255, 255, 120), 
-                                size=1, pxMode=False)
+                                size=0.1, pxMode=False)
     p1.addItem(points)
     ptr += 1
 
