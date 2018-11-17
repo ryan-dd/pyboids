@@ -13,7 +13,17 @@ from Boids import Boids
 # coordinates = [agent_coordinates1, agent_coordinates2]
 
 generator = Boids()
-generator.initialize_boids()
+generator.initialize_boids(
+                        NumAgents=200, 
+                        WorldDimension=12, 
+                        zone_of_repulsion_width=1, 
+                        zone_of_attraction_width=5, 
+                        zone_of_orientation_width=.1,
+                        tau=1,
+                        limit_angle=np.pi/4,
+                        use_nn=True,
+                        num_neighbors=5
+                    )
 
 pg.setConfigOptions(antialias=True)
 app = QtGui.QApplication([])

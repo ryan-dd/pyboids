@@ -4,14 +4,24 @@ from numpy import random
 from scipy import spatial
 from sklearn import preprocessing
 
+USE_NN = True
+NUM_NEIGHBORS = 5
+
 class Boids:
     
     def __init__(self):
         pass
 
-    def initialize_boids(self):
-        NumAgents= 200
-        WorldDimension = 12
+    def initialize_boids(self, 
+            NumAgents, 
+            WorldDimension, 
+            zone_of_repulsion_width, 
+            zone_of_attraction_width, 
+            zone_of_orientation_width,
+            tau,
+            limit_angle,
+            use_nn,
+            num_neighbors):
 
         self.all_positions = WorldDimension*(random.rand(NumAgents,2)-0.5)
         
@@ -19,17 +29,17 @@ class Boids:
         #self._boid_velocities = (random.rand(NumAgents,2)-0.5)
         self._boid_velocities = preprocessing.normalize(self._boid_velocities, norm='l2')
 
-        zone_of_repulsion_width = 1
-        zone_of_orientation_width = 0.1
-        zone_of_attraction_width = 5
-        self.tau = 1
-        self.limit_angle = np.pi/4
+        self.tau = tau
+        self.limit_angle = limit_angle
 
         self._zor_max = zone_of_repulsion_width
         self._zoo_min = self._zor_max
         self._zoo_max = self._zoo_min+zone_of_orientation_width
         self._zoa_min = self._zoo_max
         self._zoa_max = self._zoa_min+zone_of_attraction_width
+
+        self.use_nn = use_nn
+        self.num_neighbors = num_neighbors
 
         
         
@@ -43,7 +53,7 @@ class Boids:
             # Update velocity for agent i
             distances = all_distances[i,:]
 
-            agents_to_ignore = self._find_ignore_neighbors(boid_position,i)
+            #agents_to_ignore = self._find_ignore_neighbors(boid_position,i)
 
             v1 = self._attraction_rule(boid_position,distances)
             v2 = self._repulsion_rule(boid_position,distances,i)
@@ -100,9 +110,18 @@ class Boids:
         ignore_neighbor_indices = np.where((angles < angle_constant) & (angles > -angle_constant),1,0)
         pass
 
+    def _get_nearest_neighbor_indicies(self, num_neighbors, distances):
+        sort_indx = np.argsort(distance)
+        return sort_indx[:num_neighbors]
+
     def _attraction_rule(self, boid_position, distances):
         attraction_neighbors = np.where((distances > self._zoa_min) & (distances <= self._zoa_max),1,0)
         attraction_neighbors_indices = np.where(attraction_neighbors)[0]
+
+        if self.use_nn:
+            nn_indices = nearest_neighbors = self._get_nearest_neighbor_indicies(self.num_neighbors, distances)
+            attraction_neighbors_indices = np.array(list(set(nn_indices).intersection(set(attraction_neighbors_indices))))
+        
         if (len(attraction_neighbors_indices) != 0):
             attraction_neighbors = np.take(self.all_positions, attraction_neighbors_indices, axis=0)
             #attraction_neighbors = preprocessing.normalize(attraction_neighbors)
@@ -116,6 +135,11 @@ class Boids:
         repulsion_neighbors = np.where((distances <= self._zor_max),1,0)
         repulsion_neighbors_indices = np.where(repulsion_neighbors)[0]
         repulsion_neighbors[i] = False
+
+        if USE_NN:
+            nn_indices = nearest_neighbors = self._get_nearest_neighbor_indicies(self.num_neighbors, distances)
+            repulsion_neighbors_indices = np.array(list(set(nn_indices).intersection(set(repulsion_neighbors_indices))))
+
         if (len(repulsion_neighbors_indices) != 0):
             repulsion_neighbors = np.take(self.all_positions, repulsion_neighbors_indices, axis=0)
             center_of_mass = np.mean(repulsion_neighbors,axis=0)
@@ -127,6 +151,11 @@ class Boids:
     def _orientation_rule(self, boid_position, distances):
         orientation_neighbors = np.where((distances > self._zoo_min) & (distances <= self._zoo_max),1,0)
         on_indices = np.where(orientation_neighbors)[0]
+
+        if USE_NN:
+            nn_indices = nearest_neighbors = self._get_nearest_neighbor_indicies(self.num_neighbors ,distances)
+            on_indices = np.array(list(set(nn_indices).intersection(set(on_indices))))
+
         if (len(on_indices) != 0):
             orientation_neighbors = np.take(self._boid_velocities,on_indices, axis=0)
             average_velocity = np.mean(orientation_neighbors,axis=0)
