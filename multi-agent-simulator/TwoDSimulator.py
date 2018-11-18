@@ -5,22 +5,16 @@ import pyqtgraph as pg
 from DataGenerator import DataGenerator
 from Boids import Boids
 
-# NumAgents=10
-# WorldDimension = 100
-
-# agent_coordinates1 = WorldDimension*(random.rand(2,NumAgents)-0.5)
-# agent_coordinates2 = WorldDimension*(random.rand(2,NumAgents)-0.5)
-# coordinates = [agent_coordinates1, agent_coordinates2]
 
 generator = Boids()
 generator.initialize_boids(
                         NumAgents=200, 
                         WorldDimension=12, 
                         zone_of_repulsion_width=1, 
-                        zone_of_attraction_width=5, 
-                        zone_of_orientation_width=.1,
+                        zone_of_attraction_width=10, 
+                        zone_of_orientation_width=.5,
                         tau=1,
-                        limit_angle=np.pi/4,
+                        limit_angle=np.pi/.1,
                         use_nn=True,
                         num_neighbors=5
                     )
@@ -41,11 +35,11 @@ def update():
     data = generator.update_boids()
     points = pg.ScatterPlotItem(x=data[:,0], y=data[:,1],
                                 pen=pg.mkPen(None), symbolBrush=(255, 255, 255, 120), 
-                                size=0.1, pxMode=False)
+                                size=0.2, pxMode=False)
     p1.addItem(points)
     ptr += 1
 
 timer = QtCore.QTimer()
 timer.timeout.connect(update)
-timer.start(0)
+timer.start(10)
 QtGui.QApplication.instance().exec_()

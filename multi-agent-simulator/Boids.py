@@ -4,8 +4,6 @@ from numpy import random
 from scipy import spatial
 from sklearn import preprocessing
 
-USE_NN = True
-NUM_NEIGHBORS = 5
 
 class Boids:
     
@@ -136,7 +134,7 @@ class Boids:
         repulsion_neighbors_indices = np.where(repulsion_neighbors)[0]
         repulsion_neighbors[i] = False
 
-        if USE_NN:
+        if self.use_nn:
             nn_indices = nearest_neighbors = self._get_nearest_neighbor_indicies(self.num_neighbors, distances)
             repulsion_neighbors_indices = np.array(list(set(nn_indices).intersection(set(repulsion_neighbors_indices))))
 
@@ -152,7 +150,7 @@ class Boids:
         orientation_neighbors = np.where((distances > self._zoo_min) & (distances <= self._zoo_max),1,0)
         on_indices = np.where(orientation_neighbors)[0]
 
-        if USE_NN:
+        if self.use_nn:
             nn_indices = nearest_neighbors = self._get_nearest_neighbor_indicies(self.num_neighbors ,distances)
             on_indices = np.array(list(set(nn_indices).intersection(set(on_indices))))
 
