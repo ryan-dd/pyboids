@@ -22,10 +22,10 @@ class Boids:
         self._boid_velocities = preprocessing.normalize(self._boid_velocities, norm='l2')
 
         zone_of_repulsion_width = 1
-        zone_of_orientation_width = 0.0001
-        zone_of_attraction_width = 5
-        self.tau = 1
-        self.limit_angle = np.pi/4
+        zone_of_orientation_width = 0.1
+        zone_of_attraction_width = 10
+        self.tau = 4
+        self.limit_angle = np.pi
 
         self._zor_max = zone_of_repulsion_width
         self._zoo_min = self._zor_max
