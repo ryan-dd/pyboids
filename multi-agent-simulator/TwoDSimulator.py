@@ -29,15 +29,15 @@ def update():
     global points, points1, data, ptr
     p1.clear()
     data = generator.update_boids()
-    rogue_index = 100
+    rogue_index = 50
     points = pg.ScatterPlotItem(x=data[rogue_index:,0], y=data[rogue_index:,1],
                                 pen=pg.mkPen(None), #symbolBrush=((255,100,100)), 
                                 size=0.25, pxMode=False)
     points1 = pg.ScatterPlotItem(x=data[0:rogue_index,0], y=data[0:rogue_index,1],
                                 pen=pg.mkPen(None), #symbolBrush=('b'), 
-                                size=0.5, pxMode=False)
-    points.setBrush(QtGui.QBrush(QtGui.QColor(100,100,255)))
-    points1.setBrush(QtGui.QBrush(QtGui.QColor(255,0,0)))
+                                size=0.25, pxMode=False)
+    points.setBrush(QtGui.QBrush(QtGui.QColor(50,50,255)))
+    points1.setBrush(QtGui.QBrush(QtGui.QColor(255,50,50)))
     p1.addItem(points)
     p1.addItem(points1)
     ptr += 1

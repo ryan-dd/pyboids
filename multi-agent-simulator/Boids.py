@@ -23,11 +23,22 @@ class Boids:
         # Normalize the velocity vectors using least squares normalization
         self._boid_velocities = preprocessing.normalize(self._boid_velocities, norm='l2')
 
-        zone_of_repulsion_width = 1
-        zone_of_orientation_width = 0.1
-        zone_of_attraction_width = 5
-        self.tau = 1 # time step
-        self.limit_angle = np.pi/4 # maximum turn angle
+        flock_params = {
+            'swarm' : (1,5,0.1,4,np.pi),
+            'torus' : (1,5,0.1,1,np.pi/4),
+            'parallel' : (1,15,15,1,np.pi/4),
+            'dynamic' : (1,15,5,1,np.pi/4)
+        }
+
+        major_type = flock_params.get('dynamic')
+        minor_type = flock_params.get('torus')
+        self.rogue_index = 50
+
+        zone_of_repulsion_width =   major_type[0]
+        zone_of_attraction_width =  major_type[1]
+        zone_of_orientation_width = major_type[2]
+        self.tau =                  major_type[3]
+        self.limit_angle =          major_type[4]
 
         self._zor_max = zone_of_repulsion_width
         self._zoo_min = self._zor_max
@@ -35,7 +46,17 @@ class Boids:
         self._zoa_min = self._zoo_max
         self._zoa_max = self._zoa_min+zone_of_attraction_width
 
+        zone_of_repulsion_width1 =   minor_type[0]
+        zone_of_attraction_width1 =  minor_type[1]
+        zone_of_orientation_width1 = minor_type[2]
+        self.tau1 =                  minor_type[3]
+        self.limit_angle1 =          minor_type[4]
 
+        self._zor_max1 = zone_of_repulsion_width1
+        self._zoo_min1 = self._zor_max1
+        self._zoo_max1 = self._zoo_min1+zone_of_orientation_width1
+        self._zoa_min1 = self._zoo_max1
+        self._zoa_max1 = self._zoa_min1+zone_of_attraction_width1
 
     def update_boids(self):
         # Matrix giving all pairwise distances between agents
@@ -44,48 +65,54 @@ class Boids:
         new_velocity = np.copy(self._boid_velocities)
 
         for i, boid_position in enumerate(self.all_positions):
-            if i < 100:
-                vfinal = preprocessing.normalize(np.ones((1,2)), norm='l2')
-                vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i])
-                new_velocity[i] = vfinal
+            # Update velocity for agent i
+            distances = all_distances[i,:]
+
+            # This appears to be unused
+            agents_to_ignore = self._find_ignore_neighbors(boid_position,i)
+
+            # Find velocity vectors for each of the formation rules
+            v1 = self._attraction_rule(boid_position,distances,i)
+            v2 = self._repulsion_rule(boid_position,distances,i)
+            v3 = self._orientation_rule(boid_position,distances,i)
+            # Scale all velocities by the time step
+            if i < self.rogue_index:
+                v1 = np.multiply(self.tau1,v1)
+                v2 = np.multiply(self.tau1,v2)
+                v3 = np.multiply(self.tau1,v3)
             else:
-                # Update velocity for agent i
-                distances = all_distances[i,:]
-
-                # This appears to be unused
-                agents_to_ignore = self._find_ignore_neighbors(boid_position,i)
-
-                # Find velocity vectors for each of the formation rules
-                v1 = self._attraction_rule(boid_position,distances)
-                v2 = self._repulsion_rule(boid_position,distances,i)
-                v3 = self._orientation_rule(boid_position,distances)
-                # Scale all velocities by the time step
                 v1 = np.multiply(self.tau,v1)
                 v2 = np.multiply(self.tau,v2)
                 v3 = np.multiply(self.tau,v3)
 
-                # Find the total resultant velocity vector
-                vfinal = np.add(v1, v2)
-                vfinal = np.add(vfinal,v3)
-                jitter = (random.rand(1,2)-0.5) # between 0.5 and 1.5
-                vfinal = np.add(vfinal,jitter)
-                vfinal = preprocessing.normalize(vfinal, norm='l2')
-                vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i])
-                new_velocity[i] = vfinal
+            # Find the total resultant velocity vector
+            vfinal = np.add(v1, v2)
+            vfinal = np.add(vfinal,v3)
+            jitter = (random.rand(1,2)-0.5) # between 0.5 and 1.5
+            vfinal = np.add(vfinal,jitter)
+            vfinal = preprocessing.normalize(vfinal, norm='l2')
+            vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i],i)
+            new_velocity[i] = vfinal
 
         normalize_new_velocity = preprocessing.normalize(new_velocity, norm='l2')
         self.all_positions += normalize_new_velocity*self.tau # update positions
         self._boid_velocities = normalize_new_velocity # Store velocities for next iteration
         return self.all_positions
 
-    def _limit_vector(self, vfinal, v_agent_i):
+    def _limit_vector(self, vfinal, v_agent_i,i):
         angle = self._angle_between(vfinal,v_agent_i) # Included angle of velocity vectors
         angle = self._get_smaller_complement(angle) # Normalizes angle to [-pi, pi]
         # Limit the turn by the minimum turn angle
-        if np.abs(angle) < self.limit_angle:
-            return vfinal
+        if i < self.rogue_index:
+            if np.abs(angle) < self.limit_angle1:
+                return vfinal
+            else:
+                return self._rotate(v_agent_i,np.sign(angle)*self.limit_angle1)
         else:
-            return self._rotate(v_agent_i,np.sign(angle)*self.limit_angle)
+            if np.abs(angle) < self.limit_angle:
+                return vfinal
+            else:
+                return self._rotate(v_agent_i,np.sign(angle)*self.limit_angle)
 
     def _get_smaller_complement(self, angle):
         if angle >= 0:
@@ -114,8 +141,11 @@ class Boids:
         ignore_neighbor_indices = np.where((angles < angle_constant) & (angles > -angle_constant),1,0)
         pass
 
-    def _attraction_rule(self, boid_position, distances):
-        attraction_neighbors = np.where((distances > self._zoa_min) & (distances <= self._zoa_max),1,0)
+    def _attraction_rule(self, boid_position, distances,i):
+        if i < self.rogue_index:
+            attraction_neighbors = np.where((distances > self._zoa_min1) & (distances <= self._zoa_max1),1,0)
+        else:
+            attraction_neighbors = np.where((distances > self._zoa_min) & (distances <= self._zoa_max),1,0)            
         attraction_neighbors_indices = np.where(attraction_neighbors)[0]
         if (len(attraction_neighbors_indices) != 0):
             attraction_neighbors = np.take(self.all_positions, attraction_neighbors_indices, axis=0)
@@ -127,7 +157,10 @@ class Boids:
             return [0,0]
 
     def _repulsion_rule(self, boid_position, distances,i):
-        repulsion_neighbors = np.where((distances <= self._zor_max),1,0)
+        if i < self.rogue_index:
+            repulsion_neighbors = np.where((distances <= self._zor_max1),1,0)
+        else:
+            repulsion_neighbors = np.where((distances <= self._zor_max),1,0)
         repulsion_neighbors_indices = np.where(repulsion_neighbors)[0]
         repulsion_neighbors[i] = False
         if (len(repulsion_neighbors_indices) != 0):
@@ -138,8 +171,11 @@ class Boids:
         else:
             return [0,0]
 
-    def _orientation_rule(self, boid_position, distances):
-        orientation_neighbors = np.where((distances > self._zoo_min) & (distances <= self._zoo_max),1,0)
+    def _orientation_rule(self, boid_position, distances,i):
+        if i < self.rogue_index:
+            orientation_neighbors = np.where((distances > self._zoo_min1) & (distances <= self._zoo_max1),1,0)
+        else:
+            orientation_neighbors = np.where((distances > self._zoo_min) & (distances <= self._zoo_max),1,0)
         on_indices = np.where(orientation_neighbors)[0]
         if (len(on_indices) != 0):
             orientation_neighbors = np.take(self._boid_velocities,on_indices, axis=0)
