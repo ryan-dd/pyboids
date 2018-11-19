@@ -26,13 +26,20 @@ p1.setRange(xRange=[-50,50],yRange=[-50,50])
 data = generator.all_positions
 ptr = 0
 def update():
-    global points, data, ptr
+    global points, points1, data, ptr
     p1.clear()
     data = generator.update_boids()
-    points = pg.ScatterPlotItem(x=data[:,0], y=data[:,1],
-                                pen=pg.mkPen(None), symbolBrush=(255, 255, 255, 120), 
-                                size=0.1, pxMode=False)
+    rogue_index = 100
+    points = pg.ScatterPlotItem(x=data[rogue_index:,0], y=data[rogue_index:,1],
+                                pen=pg.mkPen(None), #symbolBrush=((255,100,100)), 
+                                size=0.25, pxMode=False)
+    points1 = pg.ScatterPlotItem(x=data[0:rogue_index,0], y=data[0:rogue_index,1],
+                                pen=pg.mkPen(None), #symbolBrush=('b'), 
+                                size=0.5, pxMode=False)
+    points.setBrush(QtGui.QBrush(QtGui.QColor(100,100,255)))
+    points1.setBrush(QtGui.QBrush(QtGui.QColor(255,0,0)))
     p1.addItem(points)
+    p1.addItem(points1)
     ptr += 1
 
 timer = QtCore.QTimer()

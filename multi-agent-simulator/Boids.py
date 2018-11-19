@@ -44,29 +44,34 @@ class Boids:
         new_velocity = np.copy(self._boid_velocities)
 
         for i, boid_position in enumerate(self.all_positions):
-            # Update velocity for agent i
-            distances = all_distances[i,:]
+            if i < 100:
+                vfinal = preprocessing.normalize(np.ones((1,2)), norm='l2')
+                vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i])
+                new_velocity[i] = vfinal
+            else:
+                # Update velocity for agent i
+                distances = all_distances[i,:]
 
-            # This appears to be unused
-            agents_to_ignore = self._find_ignore_neighbors(boid_position,i)
+                # This appears to be unused
+                agents_to_ignore = self._find_ignore_neighbors(boid_position,i)
 
-            # Find velocity vectors for each of the formation rules
-            v1 = self._attraction_rule(boid_position,distances)
-            v2 = self._repulsion_rule(boid_position,distances,i)
-            v3 = self._orientation_rule(boid_position,distances)
-            # Scale all velocities by the time step
-            v1 = np.multiply(self.tau,v1)
-            v2 = np.multiply(self.tau,v2)
-            v3 = np.multiply(self.tau,v3)
+                # Find velocity vectors for each of the formation rules
+                v1 = self._attraction_rule(boid_position,distances)
+                v2 = self._repulsion_rule(boid_position,distances,i)
+                v3 = self._orientation_rule(boid_position,distances)
+                # Scale all velocities by the time step
+                v1 = np.multiply(self.tau,v1)
+                v2 = np.multiply(self.tau,v2)
+                v3 = np.multiply(self.tau,v3)
 
-            # Find the total resultant velocity vector
-            vfinal = np.add(v1, v2)
-            vfinal = np.add(vfinal,v3)
-            jitter = (random.rand(1,2)-0.5) # between 0.5 and 1.5
-            vfinal = np.add(vfinal,jitter)
-            vfinal = preprocessing.normalize(vfinal, norm='l2')
-            vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i])
-            new_velocity[i] = vfinal
+                # Find the total resultant velocity vector
+                vfinal = np.add(v1, v2)
+                vfinal = np.add(vfinal,v3)
+                jitter = (random.rand(1,2)-0.5) # between 0.5 and 1.5
+                vfinal = np.add(vfinal,jitter)
+                vfinal = preprocessing.normalize(vfinal, norm='l2')
+                vfinal = self._limit_vector(vfinal[0], self._boid_velocities[i])
+                new_velocity[i] = vfinal
 
         normalize_new_velocity = preprocessing.normalize(new_velocity, norm='l2')
         self.all_positions += normalize_new_velocity*self.tau # update positions
