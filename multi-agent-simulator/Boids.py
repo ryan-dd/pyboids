@@ -30,9 +30,7 @@ class Boids:
         self._zoo_max = self._zoo_min+zone_of_orientation_width
         self._zoa_min = self._zoo_max
         self._zoa_max = self._zoa_min+zone_of_attraction_width
-
-        
-        
+       
     def update_boids(self):
         # Matrix giving all pairwise distances between agents
         all_distances = spatial.distance_matrix(self.all_positions,self.all_positions)
@@ -98,7 +96,6 @@ class Boids:
         angles = np.dot(other_agent_vectors,self._boid_velocities[i])
         angle_constant = 0.9
         ignore_neighbor_indices = np.where((angles < angle_constant) & (angles > -angle_constant),1,0)
-        pass
 
     def _attraction_rule(self, boid_position, distances):
         attraction_neighbors = np.where((distances > self._zoa_min) & (distances <= self._zoa_max),1,0)
@@ -152,8 +149,6 @@ class Boids:
         #vfinal, vagenti
         v1limited = self._limit_vector(v1, v2)
         print(v1limited)
-
-
 
 if __name__ == '__main__':
     boids = Boids()

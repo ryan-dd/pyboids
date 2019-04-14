@@ -5,13 +5,6 @@ import pyqtgraph as pg
 from DataGenerator import DataGenerator
 from Boids import Boids
 
-# NumAgents=10
-# WorldDimension = 100
-
-# agent_coordinates1 = WorldDimension*(random.rand(2,NumAgents)-0.5)
-# agent_coordinates2 = WorldDimension*(random.rand(2,NumAgents)-0.5)
-# coordinates = [agent_coordinates1, agent_coordinates2]
-
 generator = Boids()
 generator.initialize_boids()
 
