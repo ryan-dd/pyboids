@@ -3,7 +3,7 @@ Multi-Agent simulator is python software to simulate flock and swarm behavior wi
 
 ## Getting Started
 
-Run the simulation by running 2dSimulator.py
+Run the simulation by running TwoDSimulator.py
 
 ## License
 
