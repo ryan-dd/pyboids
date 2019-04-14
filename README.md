@@ -1,5 +1,7 @@
 # multi-agent-simulator
-Multi-Agent simulator is python software to simulate flock and swarm behavior with agents
+Multi-Agent simulator is python code to simulate flock and swarm behavior with agents.
+It is based on boids.
+Agents have attraction, repulsion, and orientation behavior based on their local state.
 
 ## Getting Started
 
