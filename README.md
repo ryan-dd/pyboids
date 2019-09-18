@@ -5,16 +5,18 @@ Agents have attraction, repulsion, and orientation behavior based on their local
 
 ## Getting Started
 
-Run the simulation by running TwoDSimulator.py
+Run the simulation by running:
+
+python -m pyboids.simulation
 
 ### Requirements
 Scipy
 
-sklearn
+Sklearn
 
-numpy
+Numpy
 
-pyqtgraph
+Pyqtgraph
 
 ## License
 
