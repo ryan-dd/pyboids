@@ -20,13 +20,13 @@ zone_of_orientation_width
 zone_of_attraction_width
 ```
 ### Requirements
-Scipy
+SciPy
 
-Sklearn
+Scikit-learn
 
-Numpy
+NumPy
 
-Pyqtgraph
+PyQtgraph
 
 ## License
 
