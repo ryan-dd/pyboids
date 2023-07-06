@@ -9,5 +9,5 @@ PyQt5-sip==4.19.13
 pyqtgraph==0.10.0
 python-dateutil==2.7.5
 pytz==2018.7
-scipy==1.1.0
+scipy==1.10.0
 six==1.11.0
